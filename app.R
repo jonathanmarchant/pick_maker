@@ -2,6 +2,7 @@ library(shiny)
 library(bslib)
 library(tidyverse)
 library(espnscrapeR)
+source("helpers.R")
 
 param_season <- 2025
 
@@ -42,7 +43,7 @@ divisions <- tribble(
 )
 
 # Cache data on app load
-schedule <- get_nfl_schedule(season = param_season)
+schedule <- jm_nfl_schedule(season = param_season)
 standings <- get_nfl_standings(season = param_season)
 qbr_data <- get_nfl_qbr(season = param_season)
 qb_stats <- scrape_espn_stats(season = param_season, stats = "passing", season_type = "Regular")
