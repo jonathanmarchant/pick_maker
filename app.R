@@ -2,6 +2,7 @@ library(shiny)
 library(bslib)
 library(tidyverse)
 library(espnscrapeR)
+library(gt)
 source("helpers.R")
 
 param_season <- 2025
@@ -187,26 +188,19 @@ server <- function(input, output, session) {
     }
     
     # Get QB details combining QBR and passing stats
-    get_qb_info <- function(team_abb) {
-      qb <- qbr_data |>
+    get_qb_table <- function(team_abb) {
+      qbr_data |>
         filter(team_abb == !!team_abb) |>
-        arrange(desc(qbr_total)) |>
-        slice(1)
-      
-      if (nrow(qb) > 0) {
-        # Try to match QB with passing stats
-        qb_passing <- qb_stats |>
-          filter(team == qb$team) |>
-          slice(1)
-        
-        list(qb = qb, stats = qb_passing)
-      } else {
-        list(qb = NULL, stats = NULL)
-      }
+        filter(qb_plays >= 10) |>
+        arrange(desc(qb_plays)) |>
+        left_join(qb_stats, by=c("name_display" = "name")) |>
+        select(name_display, qbr_total, pass_yards, pass_td, comp_percent, pass_rating) |>
+        gt() |>
+        as_raw_html()
     }
     
-    away_qb_info <- get_qb_info(game$away_team_abb)
-    home_qb_info <- get_qb_info(game$home_team_abb)
+    away_qb_table <- get_qb_table(game$away_team_abb)
+    home_qb_table <- get_qb_table(game$home_team_abb)
     
     tagList(
       card(
@@ -230,19 +224,10 @@ server <- function(input, output, session) {
             class = "bg-light",
             h5(class = "mb-0", paste("🏈", away_standing$team_full))
           ),
-          if(!is.null(away_qb_info$qb)) {
+          if(!is.null(away_qb_table)) {
             card_body(
-              h6(class = "text-muted", "Top Quarterback"),
-              p(strong(away_qb_info$qb$name_display)),
-              p("QBR: ", span(class = "badge bg-primary", round(away_qb_info$qb$qbr_total, 1))),
-              if (!is.null(away_qb_info$stats) && nrow(away_qb_info$stats) > 0) {
-                tagList(
-                  p("Passing Yards: ", away_qb_info$stats$yds),
-                  p("Touchdowns: ", away_qb_info$stats$td),
-                  p("Completion %: ", round(away_qb_info$stats$cmp_pct, 1), "%"),
-                  p("Passer Rating: ", round(away_qb_info$stats$qbr, 1))
-                )
-              }
+              h6(class = "text-muted", "Quarterbacks"),
+              HTML(away_qb_table)
             )
           },
           card_footer(
@@ -261,19 +246,10 @@ server <- function(input, output, session) {
             class = "bg-light",
             h5(class = "mb-0", paste("🏠", home_standing$team_full))
           ),
-          if(!is.null(home_qb_info$qb)) {
+          if(!is.null(home_qb_table)) {
             card_body(
-              h6(class = "text-muted", "Top Quarterback"),
-              p(strong(home_qb_info$qb$name_display)),
-              p("QBR: ", span(class = "badge bg-primary", round(home_qb_info$qb$qbr_total, 1))),
-              if (!is.null(home_qb_info$stats) && nrow(home_qb_info$stats) > 0) {
-                tagList(
-                  p("Passing Yards: ", home_qb_info$stats$yds),
-                  p("Touchdowns: ", home_qb_info$stats$td),
-                  p("Completion %: ", round(home_qb_info$stats$cmp_pct, 1), "%"),
-                  p("Passer Rating: ", round(home_qb_info$stats$qbr, 1))
-                )
-              }
+              h6(class = "text-muted", "Quarterbacks"),
+              HTML(home_qb_table)
             )
           },
           card_footer(
