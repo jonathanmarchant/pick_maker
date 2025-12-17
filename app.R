@@ -46,8 +46,12 @@ divisions <- tribble(
 # Cache data on app load
 schedule <- jm_nfl_schedule(season = param_season)
 standings <- get_nfl_standings(season = param_season)
-qbr_data <- get_nfl_qbr(season = param_season)
-qb_stats <- scrape_espn_stats(season = param_season, stats = "passing", season_type = "Regular")
+
+qbr_data <- get_nfl_qbr(season = param_season) |>
+  mutate(name_standard = toupper(str_remove_all(name_display, "[[:punct:][:blank:]]")))
+
+qb_stats <- scrape_espn_stats(season = param_season, stats = "passing", season_type = "Regular") |>
+  mutate(name_standard = toupper(str_remove_all(name, "[[:punct:][:blank:]]")))
 
 # Pre-process standings with division rank
 standings_with_rank <- standings |>
@@ -74,20 +78,25 @@ get_this_weeks_games <- function() {
   games
 }
 
-ui <- page_sidebar(
+ui <- page(
   title = "NFL Games This Week",
   theme = bs_theme(
     bootswatch = "flatly",
     primary = "#013369",
     secondary = "#d50a0a"
   ),
-  sidebar = sidebar(
-    width = 300,
-    selectInput(
+  tags$head(tags$style('.card { overflow: visible !important;}'),
+            tags$style('.card-body { overflow: visible !important;}')),
+  card(
+      card_header(
+        class = "bg-primary text-white",
+        h4(class = "mb-0", "Inputs")
+      ),
+      selectInput(
       "selected_game",
       "Select a game:",
       choices = get_this_weeks_games()
-    )
+      )
   ),
   tags$style(HTML("
     .highlight-row {
@@ -193,7 +202,7 @@ server <- function(input, output, session) {
         filter(team_abb == !!team_abb) |>
         filter(qb_plays >= 10) |>
         arrange(desc(qb_plays)) |>
-        left_join(qb_stats, by=c("name_display" = "name")) |>
+        left_join(qb_stats, by="name_standard") |>
         select(name_display, qbr_total, pass_yards, pass_td, comp_percent, pass_rating) |>
         gt() |>
         as_raw_html()
