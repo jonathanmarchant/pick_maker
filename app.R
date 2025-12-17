@@ -86,7 +86,8 @@ ui <- page(
     secondary = "#d50a0a"
   ),
   tags$head(tags$style('.card { overflow: visible !important;}'),
-            tags$style('.card-body { overflow: visible !important;}')),
+            tags$style('.card-body { overflow: visible !important;}'),
+            tags$style('.card-footer { margin-top: 0 !important;}')),
   card(
       card_header(
         class = "bg-primary text-white",
@@ -233,12 +234,6 @@ server <- function(input, output, session) {
             class = "bg-light",
             h5(class = "mb-0", paste("🏈", away_standing$team_full))
           ),
-          if(!is.null(away_qb_table)) {
-            card_body(
-              h6(class = "text-muted", "Quarterbacks"),
-              HTML(away_qb_table)
-            )
-          },
           card_footer(
             h6(paste(away_standing$division, "Standings")),
             create_standings_table(away_standing$division, game$away_team_abb)
@@ -246,6 +241,10 @@ server <- function(input, output, session) {
           card_footer(
             h6("Season Games"),
             create_game_history(game$away_team_abb)
+          ),
+          card_footer(
+            h6("Quarterbacks"),
+            HTML(away_qb_table)
           )
         ),
         
@@ -255,12 +254,6 @@ server <- function(input, output, session) {
             class = "bg-light",
             h5(class = "mb-0", paste("🏠", home_standing$team_full))
           ),
-          if(!is.null(home_qb_table)) {
-            card_body(
-              h6(class = "text-muted", "Quarterbacks"),
-              HTML(home_qb_table)
-            )
-          },
           card_footer(
             h6(paste(home_standing$division, "Standings")),
             create_standings_table(home_standing$division, game$home_team_abb)
@@ -268,6 +261,10 @@ server <- function(input, output, session) {
           card_footer(
             h6("Season Games"),
             create_game_history(game$home_team_abb)
+          ),
+          card_footer(
+              h6("Quarterbacks"),
+              HTML(home_qb_table)            
           )
         )
       )
